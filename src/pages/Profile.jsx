@@ -9,10 +9,12 @@ import {
   User,
   Calendar,
 } from "lucide-react";
+import { nip19 } from "nostr-tools";
 import { useStore } from "../store/useStore";
 import {
   fetchUserPosts,
   fetchUserProfile,
+  fetchFollowedUsers,
   publishPost,
   vote,
   fetchComments,
@@ -20,6 +22,7 @@ import {
 import { formatDistanceToNow, format } from "date-fns";
 import { pl } from "date-fns/locale";
 
+import { useNostr } from "../hooks/useNostr";
 function Profile() {
   const { pubkey } = useParams();
   const [profile, setProfile] = useState(null);
@@ -30,16 +33,24 @@ function Profile() {
   const [comments, setComments] = useState({});
   const [newComments, setNewComments] = useState({});
   const [publishingComments, setPublishingComments] = useState({});
-  const { publicKey, privateKey, setPrivateKey } = useStore();
+  const { publicKey, privateKey } = useStore();
   const [activeTab, setActiveTab] = useState("all");
   const [showPrivateKey, setShowPrivateKey] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followedCount, setFollowedCount] = useState(0);
+  const [followersCount, setFollowersCount] = useState(0);
+  const { followUser, unfollowUser, isFollowed } = useNostr();
 
   useEffect(() => {
     loadProfileData();
-  }, []); // [pubkey]
+  }, [pubkey, publicKey]);
 
   async function loadProfileData() {
     setLoading(true);
+    setIsFollowing(isFollowed(pubkey));
+
+    const followed = await fetchFollowedUsers(pubkey);
+    const followers = await fetchFollowedUsers();
     try {
       const [userProfile, userPosts] = await Promise.all([
         fetchUserProfile(pubkey),
@@ -48,10 +59,13 @@ function Profile() {
       setProfile(userProfile);
       setPosts(userPosts.sort((a, b) => b.createdAt - a.createdAt));
     } catch (error) {
-      console.error("Error loading profile data:", error);
+      console.error("Błąd ładowania danych profilu:", error);
     } finally {
       setLoading(false);
     }
+    setFollowedCount(followed.length);
+    setFollowersCount(followers.filter((f) => f.followed.includes(pubkey)).length);
+    //  setFollowersCount(followers.length);
   }
 
   async function handleVote(postId, postAuthor, isUpvote) {
@@ -127,20 +141,51 @@ function Profile() {
             )}
           </div>
           <div className="profile__info">
-            <h1>{profile?.name || pubkey.slice(0, 8)}</h1>
+            <div className="profile__heading">
+              <h1>{profile?.name || nip19.npubEncode(pubkey).slice(0, 8)}</h1>
+              {publicKey && pubkey !== publicKey && (
+                <button
+                  type="button"
+                  className={`button ${isFollowing ? "button--secondary" : ""}`}
+                  onClick={async () => {
+                    if (isFollowing) {
+                      await unfollowUser(pubkey);
+                    } else {
+                      await followUser(pubkey);
+                    }
+                    setIsFollowing(!isFollowing);
+                  }}
+                >
+                  {isFollowing ? "Przestań obserwować" : "Obserwuj"}
+                </button>
+              )}
+            </div>
             {profile?.about && <p className="profile__bio">{profile.about}</p>}
             <div className="profile__meta">
               <span>
+                {profile?.name || nip19.npubEncode(pubkey).slice(0, 8)} obserwuje:{" "}
+                {followedCount}
+              </span>
+              <span>
+                Liczba obserwujących: {followersCount}
+              </span>
+              <span>
+                <User size={16} />
+                {nip19.npubEncode(pubkey).slice(0, 12)}...
+              </span>
+
+              {profile?.created_at && (
+                <span>
                 <Calendar size={16} />
                 Dołączył(a):{" "}
-                {format(profile?.created_at || Date.now(), "MMMM yyyy", {
+                {format(profile.created_at * 1000, "MMMM yyyy", {
                   locale: pl,
-                })}
+                })}{" "}
               </span>
             </div>
           </div>
         </div>
-        {pubkey === publicKey && ( // Only show to the profile owner
+        {pubkey === publicKey && (
           <>
             {showPrivateKey && (
               <div className="profile__private-key">

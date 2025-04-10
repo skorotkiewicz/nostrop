@@ -1,5 +1,13 @@
-import { SimplePool, getEventHash } from "nostr-tools";
-import { finalizeEvent } from "nostr-tools/pure";
+import {
+  SimplePool,
+  getEventHash,
+  finalizeEvent,
+  getPublicKey,
+  validateEvent,
+  verifySignature,
+  signEvent,
+  utils,
+} from "nostr-tools";
 import { POOL_NAME } from "../config.js";
 
 const RELAYS = [
@@ -167,7 +175,7 @@ export async function fetchComments(postId) {
   }
 }
 
-export async function fetchPosts(section = "main") {
+export async function fetchPosts(section = "main", limit = 100) {
   try {
     const events = await pool.querySync(RELAYS, {
       kinds: [1],
@@ -192,18 +200,20 @@ export async function fetchPosts(section = "main") {
       const comments = await pool.querySync(RELAYS, {
         kinds: [1],
         "#e": posts.map((p) => p.id),
-        "#t": [POOL_NAME],
+        limit: 1000,
       });
 
       for (const post of posts) {
         post.votes = votes[post.id] || { up: 0, down: 0 };
         post.comments = comments.filter((c) =>
-          c.tags.some((t) => t[0] === "e" && t[1] === post.id),
+          c.tags.some((t) => t[0] === "e" && t[1] === post.id)
         ).length;
       }
     }
 
-    return posts;
+    return posts.sort((a, b) => b.createdAt - a.createdAt);
+
+
   } catch (error) {
     console.error("Error fetching posts:", error);
     throw error;
@@ -342,6 +352,7 @@ export async function fetchAllPosts() {
         comments: 0,
       }));
 
+
     if (posts.length > 0) {
       const votes = await fetchVotes(posts.map((post) => post.id));
       const comments = await pool.querySync(RELAYS, {
@@ -355,21 +366,72 @@ export async function fetchAllPosts() {
         authors.map((author) => fetchUserProfile(author)),
       );
 
-      const authorProfiles = authors.reduce((acc, author, index) => {
-        acc[author] = profiles[index];
-        return acc;
-      }, {});
+        const authorProfiles = authors.reduce((acc, author, index) => {
+          acc[author] = profiles[index];
+          return acc;
+        }, {});
 
-      for (const post of posts) {
-        post.votes = votes[post.id] || { up: 0, down: 0 };
-        post.comments = comments.filter((c) =>
-          c.tags.some((t) => t[0] === "e" && t[1] === post.id),
-        ).length;
-        post.author = {
-          id: post.author,
-          ...authorProfiles[post.author],
-        };
+        for (const post of posts) {
+          post.votes = votes[post.id] || { up: 0, down: 0 };
+          post.comments = comments.filter((c) =>
+            c.tags.some((t) => t[0] === "e" && t[1] === post.id)
+          ).length;
+          post.author = {
+            pubkey: post.author,
+            ...authorProfiles[post.author],
+          };
+        }
       }
+
+    return posts.sort((a, b) => b.createdAt - a.createdAt);
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    throw error;
+  }
+}
+
+export async function getFollowedUsers(userPubkey) {
+  try {
+    const followEvents = await pool.querySync(RELAYS, {
+      kinds: [3],
+      authors: [userPubkey],
+    });
+
+    if (!followEvents || followEvents.length === 0) {
+      return [];
+    }
+
+    const followedPubkeys = followEvents[0].tags
+      .filter((tag) => tag[0] === "p")
+      .map((tag) => tag[1]);
+
+    return followedPubkeys;
+  } catch (error) {
+    console.error("Error fetching followed users:", error);
+    throw error;
+  }
+}
+
+
+export async function getCommentsByParentId(postId) {
+  try {
+    const events = await pool.querySync(RELAYS, {
+      kinds: [1],
+      "#e": [postId],
+    });
+
+    const comments = events.map((event) => ({
+      id: event.id,
+      content: event.content,
+      author: event.pubkey,
+      createdAt: event.created_at,
+      votes: { up: 0, down: 0 },
+      replyTo: event.tags.find((tag) => tag[0] === "e")?.[1] || null,
+    }));
+
+    const votes = await fetchVotes(comments.map((comment) => comment.id));
+    for (const comment of comments) {
+      comment.votes = votes[comment.id] || { up: 0, down: 0 };
     }
 
     return posts.sort((a, b) => b.createdAt - a.createdAt);
