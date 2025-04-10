@@ -35,7 +35,7 @@ function Profile() {
 
   useEffect(() => {
     loadProfileData();
-  }, [pubkey]);
+  }, []); // [pubkey]
 
   async function loadProfileData() {
     setLoading(true);
