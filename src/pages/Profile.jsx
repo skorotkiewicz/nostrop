@@ -32,6 +32,7 @@ function Profile() {
   const [publishingComments, setPublishingComments] = useState({});
   const { publicKey, privateKey, setPrivateKey } = useStore();
   const [activeTab, setActiveTab] = useState("all");
+  const [showPrivateKey, setShowPrivateKey] = useState(false);
 
   useEffect(() => {
     loadProfileData();
@@ -139,29 +140,38 @@ function Profile() {
             </div>
           </div>
         </div>
-        {pubkey === publicKey && (
-          <div className="profile__private-key">
-            <input
-              type="text"
-              placeholder="Twój klucz prywatny"
-              value={privateKey || ""}
-              onChange={(e) => setPrivateKey(e.target.value)}
-            />
-            <button
-              type="button"
-              onClick={() => {
-                if (privateKey) {
-                  localStorage.setItem("privateKey", privateKey);
-                  alert("Klucz prywatny zapisany w localStorage.");
-                } else {
-                  alert("Wprowadź klucz prywatny.");
-                }
-              }}
-              className="button"
-            >
-              Zapisz klucz prywatny
-            </button>
-          </div>)}
+        {pubkey === publicKey && ( // Only show to the profile owner
+          <>
+            {showPrivateKey && (
+              <div className="profile__private-key">
+                <p>Twój klucz prywatny:</p>
+                <input
+                  type="text"
+                  value={privateKey}
+                  readOnly
+                  className="private-key-input"
+                />
+              </div>
+            )}
+            <div className="profile__actions">
+              <button
+                onClick={() => setShowPrivateKey(!showPrivateKey)}
+                className="button"
+              >
+                {showPrivateKey ? "Ukryj klucz prywatny" : "Pokaż klucz prywatny"}
+              </button>
+              {/*
+              <button
+                onClick={() => {
+                  // Add functionality to regenerate key here
+                }}
+                className="button button--secondary"
+              >
+                Regeneruj klucz prywatny
+              </button> */}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="card">
