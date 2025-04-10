@@ -378,7 +378,7 @@ export async function fetchAllPosts() {
   }
 }
 
-export async function getFollowedUsers(userPubkey) {
+export async function fetchFollowedUsers(userPubkey) {
   try {
     const followEvents = await pool.querySync(RELAYS, {
       kinds: [3],
