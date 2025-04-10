@@ -1,7 +1,6 @@
 import { useEffect } from "react";
-import { nip19, getEventHash, getPublicKey, signEvent } from "nostr-tools";
 import { useStore } from "../store/useStore";
-import { fetchPosts, publishEvent } from "../utils/nostr";
+import { fetchPosts } from "../utils/nostr";
 
 export function useNostr() {
   const { publicKey, privateKey, followedUsers, setFollowedUsers } = useStore();
@@ -12,7 +11,10 @@ export function useNostr() {
     setFollowedUsers((prev) => {
       const updatedFollowedUsers = new Set(prev);
       updatedFollowedUsers.add(pubkey);
-      localStorage.setItem("followedUsers", JSON.stringify(Array.from(updatedFollowedUsers)));
+      localStorage.setItem(
+        "followedUsers",
+        JSON.stringify(Array.from(updatedFollowedUsers)),
+      );
       return updatedFollowedUsers;
     });
   };
@@ -23,7 +25,10 @@ export function useNostr() {
     setFollowedUsers((prev) => {
       const updatedFollowedUsers = new Set(prev);
       updatedFollowedUsers.delete(pubkey);
-      localStorage.setItem("followedUsers", JSON.stringify(Array.from(updatedFollowedUsers)));
+      localStorage.setItem(
+        "followedUsers",
+        JSON.stringify(Array.from(updatedFollowedUsers)),
+      );
       return updatedFollowedUsers;
     });
   };

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import {
-    ArrowUp,
-    ArrowDown,
-    MessageSquare,
-    Send,
-    Reply,
-    User,
+  ArrowUp,
+  ArrowDown,
+  MessageSquare,
+  Send,
+  Reply,
+  User,
 } from "lucide-react";
 import { nip19 } from "nostr-tools";
 import { useNostr } from "../hooks/useNostr";
@@ -69,7 +69,8 @@ function Home() {
 
       fetchedPosts = fetchedPosts.map((post) => ({
         ...post,
-        author: typeof post.author === "string" ? post.author : post.author.pubkey,
+        author:
+          typeof post.author === "string" ? post.author : post.author.pubkey,
       }));
       const sortedPosts = sortPosts(fetchedPosts);
 
@@ -82,7 +83,7 @@ function Home() {
   }
 
   async function handlePublishPost(e) {
-      e.preventDefault();
+    e.preventDefault();
     if (!newPost.trim() || !privateKey) return;
 
     setPublishing(true);
@@ -97,7 +98,7 @@ function Home() {
     }
   }
 
-    async function handleVote(postId, postAuthor, isUpvote) {
+  async function handleVote(postId, postAuthor, isUpvote) {
     if (!privateKey || votingStates[postId]) return;
 
     setVotingStates((prev) => ({ ...prev, [postId]: true }));
@@ -111,7 +112,7 @@ function Home() {
     }
   }
 
-    async function handleExpandComments(postId) {
+  async function handleExpandComments(postId) {
     if (!expandedComments[postId]) {
       try {
         const fetchedComments = await fetchComments(postId);
@@ -125,7 +126,7 @@ function Home() {
     }
   }
 
-    async function handlePublishComment(postId) {
+  async function handlePublishComment(postId) {
     if (!newComments[postId]?.trim() || !privateKey) return;
 
     setPublishingComments((prev) => ({ ...prev, [postId]: true }));
@@ -142,111 +143,116 @@ function Home() {
     }
   }
 
-    if (loading) {
-        return <div className="spinner" />;
-    }
+  if (loading) {
+    return <div className="spinner" />;
+  }
 
-    return (
+  return (
+    <div className="card">
+      <div className="tabs">
+        <button
+          type="button"
+          className={`tab ${activeTab === "hot" ? "tab--active" : ""}`}
+          onClick={() => setActiveTab("hot")}
+        >
+          Hot
+        </button>
+        <button
+          type="button"
+          className={`tab ${activeTab === "new" ? "tab--active" : ""}`}
+          onClick={() => setActiveTab("new")}
+        >
+          New
+        </button>
+        {publicKey && (
+          <button
+            type="button"
+            className={`tab ${activeTab === "myFeed" ? "tab--active" : ""}`}
+            onClick={() => setActiveTab("myFeed")}
+          >
+            My feed
+          </button>
+        )}
+      </div>
+      {publicKey && (
         <div className="card">
-            <div className="tabs">
-                <button
-                    className={`tab ${activeTab === "hot" ? "tab--active" : ""}`}
-                    onClick={() => setActiveTab("hot")}
-                >
-                    Hot
-                </button>
-                <button
-                    className={`tab ${activeTab === "new" ? "tab--active" : ""}`}
-                    onClick={() => setActiveTab("new")}
-                >
-                    New
-                </button>
-                {publicKey && (
-                    <button
-                        className={`tab ${activeTab === "myFeed" ? "tab--active" : ""}`}
-                        onClick={() => setActiveTab("myFeed")}
-                    >
-                        My feed
-                    </button>
-                )}
-            </div>
-            {publicKey && (
-                <div className="card">
-                    <form onSubmit={handlePublishPost}>
-                        <textarea
-                            value={newPost}
-                            onChange={(e) => setNewPost(e.target.value)}
-                            placeholder="Co słychać?"
-                            className="post-input"
-                            rows="3"
-                        />
-                        <button
-                            type="submit"
-                            disabled={publishing || !newPost.trim()}
-                            className="button"
-                        >
-                            <Send size={20} />
-                            {publishing ? "Publikowanie..." : "Opublikuj"}
-                        </button>
-                    </form>
-                </div>
-            )}
-            {posts.length === 0 ? (
-                <p className="text-light">Brak postów do wyświetlenia</p>
-            ) : (
-                posts.map((p) => <div key={p.id}>{renderPost(p)}</div>)
-            )}
+          <form onSubmit={handlePublishPost}>
+            <textarea
+              value={newPost}
+              onChange={(e) => setNewPost(e.target.value)}
+              placeholder="Co słychać?"
+              className="post-input"
+              rows="3"
+            />
+            <button
+              type="submit"
+              disabled={publishing || !newPost.trim()}
+              className="button"
+            >
+              <Send size={20} />
+              {publishing ? "Publikowanie..." : "Opublikuj"}
+            </button>
+          </form>
         </div>
-    );
+      )}
+      {posts.length === 0 ? (
+        <p className="text-light">Brak postów do wyświetlenia</p>
+      ) : (
+        posts.map((p) => <div key={p.id}>{renderPost(p)}</div>)
+      )}
+    </div>
+  );
 
   function renderPost(p) {
-        const authorNpub = nip19.npubEncode(p.author);
-        return (
-            <>
-                <div className="post">
-                    <div className="post__votes">
-                        <button
-                            type="button"
-                            className={`button ${!publicKey || votingStates[p.id] ? "button--disabled" : ""
-                                }`}
-                            onClick={() => handleVote(p.id, p.author, true)}
-                            disabled={!publicKey || votingStates[p.id]}
-                        >
-                            <ArrowUp size={24} />
-                        </button>
-                        <span>{p.votes.up - p.votes.down}</span>
-                        <button
-                            type="button"
-                            className={`button ${!publicKey || votingStates[p.id] ? "button--disabled" : ""
-                                }`}
-                            onClick={() => handleVote(p.id, p.author, false)}
-                            disabled={!publicKey || votingStates[p.id]}
-                        >
-                            <ArrowDown size={24} />
-                        </button>
-                    </div>
-                    <div className="post__content">
-                        <p>{p.content}</p>
-                        <div className="post__meta">
-                            <Link to={`/profile/${authorNpub}`}>
-                                <User size={16} />
-                                <span>{p.profile?.name || authorNpub.slice(0, 8)}</span>
-                            </Link>
-                            <span>•</span>
-                            <span>
-                                {formatDistanceToNow(p.createdAt * 1000, {
-                                    addSuffix: true,
-                                    locale: pl,
-                                })}
-                            </span>
-                        </div>
-                    </div>
-                </div>
+    const authorNpub = nip19.npubEncode(p.author);
+    return (
+      <>
+        <div className="post">
+          <div className="post__votes">
+            <button
+              type="button"
+              className={`button ${
+                !publicKey || votingStates[p.id] ? "button--disabled" : ""
+              }`}
+              onClick={() => handleVote(p.id, p.author, true)}
+              disabled={!publicKey || votingStates[p.id]}
+            >
+              <ArrowUp size={24} />
+            </button>
+            <span>{p.votes.up - p.votes.down}</span>
+            <button
+              type="button"
+              className={`button ${
+                !publicKey || votingStates[p.id] ? "button--disabled" : ""
+              }`}
+              onClick={() => handleVote(p.id, p.author, false)}
+              disabled={!publicKey || votingStates[p.id]}
+            >
+              <ArrowDown size={24} />
+            </button>
+          </div>
+          <div className="post__content">
+            <p>{p.content}</p>
+            <div className="post__meta">
+              <Link to={`/profile/${authorNpub}`}>
+                <User size={16} />
+                <span>{p.profile?.name || authorNpub.slice(0, 8)}</span>
+              </Link>
+              <span>•</span>
+              <span>
+                {formatDistanceToNow(p.createdAt * 1000, {
+                  addSuffix: true,
+                  locale: pl,
+                })}
+              </span>
+            </div>
+          </div>
+        </div>
 
-                {expandedComments[p.id] && (
-                    <div className="comments">
-                        {publicKey && (
-                            <div className="comments__form">
+        {expandedComments[p.id] && (
+          <div className="comments">
+            {publicKey && (
+              <div className="comments__form">
                 <textarea
                   value={newComments[p.id] || ""}
                   onChange={(e) =>
@@ -272,31 +278,31 @@ function Home() {
                 </button>
               </div>
             )}
-                        {comments[p.id]?.map((comment) => (
-                            <div key={comment.id} className="comment">
-                                <div className="comment__content">
-                                    <p>{comment.content}</p>
-                                    <div className="comment__meta">
-                                        <Link to={`/profile/${comment.author}`}>
-                                            <span>
-                                                {comment.profile?.name || comment.author.slice(0, 8)}
-                                            </span>
-                                        </Link>
-                                        <span>•</span>
-                                        <span>
-                                            {formatDistanceToNow(comment.createdAt * 1000, {
-                                                addSuffix: true,
-                                                locale: pl,
-                                            })}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </>
-        );
+            {comments[p.id]?.map((comment) => (
+              <div key={comment.id} className="comment">
+                <div className="comment__content">
+                  <p>{comment.content}</p>
+                  <div className="comment__meta">
+                    <Link to={`/profile/${comment.author}`}>
+                      <span>
+                        {comment.profile?.name || comment.author.slice(0, 8)}
+                      </span>
+                    </Link>
+                    <span>•</span>
+                    <span>
+                      {formatDistanceToNow(comment.createdAt * 1000, {
+                        addSuffix: true,
+                        locale: pl,
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </>
+    );
   }
 }
 export default Home;

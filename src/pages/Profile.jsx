@@ -64,7 +64,9 @@ function Profile() {
       setLoading(false);
     }
     setFollowedCount(followed.length);
-    setFollowersCount(followers.filter((f) => f.followed.includes(pubkey)).length);
+    setFollowersCount(
+      followers.filter((f) => f.followed.includes(pubkey)).length,
+    );
     //  setFollowersCount(followers.length);
   }
 
@@ -163,12 +165,10 @@ function Profile() {
             {profile?.about && <p className="profile__bio">{profile.about}</p>}
             <div className="profile__meta">
               <span>
-                {profile?.name || nip19.npubEncode(pubkey).slice(0, 8)} obserwuje:{" "}
-                {followedCount}
+                {profile?.name || nip19.npubEncode(pubkey).slice(0, 8)}{" "}
+                obserwuje: {followedCount}
               </span>
-              <span>
-                Liczba obserwujących: {followersCount}
-              </span>
+              <span>Liczba obserwujących: {followersCount}</span>
               <span>
                 <User size={16} />
                 {nip19.npubEncode(pubkey).slice(0, 12)}...
@@ -176,12 +176,13 @@ function Profile() {
 
               {profile?.created_at && (
                 <span>
-                <Calendar size={16} />
-                Dołączył(a):{" "}
-                {format(profile.created_at * 1000, "MMMM yyyy", {
-                  locale: pl,
-                })}{" "}
-              </span>
+                  <Calendar size={16} />
+                  Dołączył(a):{" "}
+                  {format(profile.created_at * 1000, "MMMM yyyy", {
+                    locale: pl,
+                  })}
+                </span>
+              )}
             </div>
           </div>
         </div>

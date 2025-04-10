@@ -1,13 +1,4 @@
-import {
-  SimplePool,
-  getEventHash,
-  finalizeEvent,
-  getPublicKey,
-  validateEvent,
-  verifySignature,
-  signEvent,
-  utils,
-} from "nostr-tools";
+import { SimplePool, finalizeEvent } from "nostr-tools";
 import { POOL_NAME } from "../config.js";
 
 const RELAYS = [
@@ -206,14 +197,12 @@ export async function fetchPosts(section = "main", limit = 100) {
       for (const post of posts) {
         post.votes = votes[post.id] || { up: 0, down: 0 };
         post.comments = comments.filter((c) =>
-          c.tags.some((t) => t[0] === "e" && t[1] === post.id)
+          c.tags.some((t) => t[0] === "e" && t[1] === post.id),
         ).length;
       }
     }
 
     return posts.sort((a, b) => b.createdAt - a.createdAt);
-
-
   } catch (error) {
     console.error("Error fetching posts:", error);
     throw error;
@@ -352,7 +341,6 @@ export async function fetchAllPosts() {
         comments: 0,
       }));
 
-
     if (posts.length > 0) {
       const votes = await fetchVotes(posts.map((post) => post.id));
       const comments = await pool.querySync(RELAYS, {
@@ -366,22 +354,22 @@ export async function fetchAllPosts() {
         authors.map((author) => fetchUserProfile(author)),
       );
 
-        const authorProfiles = authors.reduce((acc, author, index) => {
-          acc[author] = profiles[index];
-          return acc;
-        }, {});
+      const authorProfiles = authors.reduce((acc, author, index) => {
+        acc[author] = profiles[index];
+        return acc;
+      }, {});
 
-        for (const post of posts) {
-          post.votes = votes[post.id] || { up: 0, down: 0 };
-          post.comments = comments.filter((c) =>
-            c.tags.some((t) => t[0] === "e" && t[1] === post.id)
-          ).length;
-          post.author = {
-            pubkey: post.author,
-            ...authorProfiles[post.author],
-          };
-        }
+      for (const post of posts) {
+        post.votes = votes[post.id] || { up: 0, down: 0 };
+        post.comments = comments.filter((c) =>
+          c.tags.some((t) => t[0] === "e" && t[1] === post.id),
+        ).length;
+        post.author = {
+          pubkey: post.author,
+          ...authorProfiles[post.author],
+        };
       }
+    }
 
     return posts.sort((a, b) => b.createdAt - a.createdAt);
   } catch (error) {
@@ -411,7 +399,6 @@ export async function getFollowedUsers(userPubkey) {
     throw error;
   }
 }
-
 
 export async function getCommentsByParentId(postId) {
   try {
