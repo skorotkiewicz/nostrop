@@ -15,7 +15,7 @@ function Login() {
       let privateKey = privateKeyInput.trim();
 
       if (privateKey === "") {
-        privateKey = utils.bytesToHex(generateSecretKey());
+        privateKey = generateSecretKey();
       } else {
         if (!utils.isValidPrivateKey(privateKey)) {
           console.error("Invalid private key provided");
@@ -67,6 +67,5 @@ function Login() {
     </div>
   );
 }
-
 
 export default Login;

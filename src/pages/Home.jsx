@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, ArrowDown, MessageSquare, Send, Reply, User } from "lucide-react";
+import {
+  ArrowUp,
+  ArrowDown,
+  MessageSquare,
+  Send,
+  Reply,
+  User,
+} from "lucide-react";
 import { useStore } from "../store/useStore";
 import { fetchPosts, publishPost, vote, fetchComments } from "../utils/nostr";
 import { formatDistanceToNow } from "date-fns";
@@ -7,7 +14,7 @@ import { pl } from "date-fns/locale";
 import { Link } from "react-router-dom";
 
 function Home() {
-  const [posts, setPosts] = useState([ ]);
+  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newPost, setNewPost] = useState("");
   const [publishing, setPublishing] = useState(false);
@@ -101,12 +108,31 @@ function Home() {
   return (
     <div className="card">
       <h2>Gorące dyskusje</h2>
+      {publicKey && (
+        <div className="card">
+          <form onSubmit={handlePublishPost}>
+            <textarea
+              value={newPost}
+              onChange={(e) => setNewPost(e.target.value)}
+              placeholder="Co słychać?"
+              className="post-input"
+              rows="3"
+            />
+            <button
+              type="submit"
+              disabled={publishing || !newPost.trim()}
+              className="button"
+            >
+              <Send size={20} />
+              {publishing ? "Publikowanie..." : "Opublikuj"}
+            </button>
+          </form>
+        </div>
+      )}
       {posts.length === 0 ? (
         <p className="text-light">Brak postów do wyświetlenia</p>
       ) : (
-        posts.map((p) => (
-          <div key={p.id}>{renderPost(p)}</div>
-        ))
+        posts.map((p) => <div key={p.id}>{renderPost(p)}</div>)
       )}
     </div>
   );
@@ -114,34 +140,13 @@ function Home() {
   function renderPost(p) {
     return (
       <>
-        {publicKey && (
-          <div className="card">
-            <form onSubmit={handlePublishPost}>
-              <textarea
-                value={newPost}
-                onChange={(e) => setNewPost(e.target.value)}
-                placeholder="Co słychać?"
-                className="post-input"
-                rows="3"
-              />
-              <button
-                type="submit"
-                disabled={publishing || !newPost.trim()}
-                className="button"
-              >
-                <Send size={20} />
-                {publishing ? "Publikowanie..." : "Opublikuj"}
-              </button>
-            </form>
-          </div>
-        )}
-
         <div className="post">
           <div className="post__votes">
             <button
               type="button"
-              className={`button ${!publicKey || votingStates[p.id] ? "button--disabled" : ""
-                }`}
+              className={`button ${
+                !publicKey || votingStates[p.id] ? "button--disabled" : ""
+              }`}
               onClick={() => handleVote(p.id, p.author, true)}
               disabled={!publicKey || votingStates[p.id]}
             >
@@ -150,8 +155,9 @@ function Home() {
             <span>{p.votes.up - p.votes.down}</span>
             <button
               type="button"
-              className={`button ${!publicKey || votingStates[p.id] ? "button--disabled" : ""
-                }`}
+              className={`button ${
+                !publicKey || votingStates[p.id] ? "button--disabled" : ""
+              }`}
               onClick={() => handleVote(p.id, p.author, false)}
               disabled={!publicKey || votingStates[p.id]}
             >
@@ -204,7 +210,9 @@ function Home() {
                   <p>{comment.content}</p>
                   <div className="comment__meta">
                     <Link to={`/profile/${comment.author}`}>
-                      <span>{comment.profile?.name || comment.author.slice(0, 8)}</span>
+                      <span>
+                        {comment.profile?.name || comment.author.slice(0, 8)}
+                      </span>
                     </Link>
                     <span>•</span>
                     <span>

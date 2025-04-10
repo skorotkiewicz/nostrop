@@ -59,7 +59,7 @@ export async function fetchPost(id) {
     }
 
     const event = events[0];
-    let post = {
+    const post = {
       id: event.id,
       content: event.content,
       author: event.pubkey,

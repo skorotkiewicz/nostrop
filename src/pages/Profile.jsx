@@ -155,10 +155,13 @@ function Profile() {
             )}
             <div className="profile__actions">
               <button
+                type="button"
                 onClick={() => setShowPrivateKey(!showPrivateKey)}
                 className="button"
               >
-                {showPrivateKey ? "Ukryj klucz prywatny" : "Pokaż klucz prywatny"}
+                {showPrivateKey
+                  ? "Ukryj klucz prywatny"
+                  : "Pokaż klucz prywatny"}
               </button>
               {/*
               <button
