@@ -1,31 +1,36 @@
-import { SimplePool, getEventHash } from 'nostr-tools';
-import { finalizeEvent } from 'nostr-tools/pure';
-import { POOL_NAME } from '../config.js'; 
+import { SimplePool, getEventHash } from "nostr-tools";
+import { finalizeEvent } from "nostr-tools/pure";
+import { POOL_NAME } from "../config.js";
 
 const RELAYS = [
   // 'wss://relay.damus.io',
   // 'wss://relay.nostr.band',
-  'wss://nos.lol',
+  "wss://nos.lol",
   // 'wss://relay.snort.social'
 ];
 
 const pool = new SimplePool();
 
-export async function publishPost(content, privateKey, replyTo = null, section = 'main') {
+export async function publishPost(
+  content,
+  privateKey,
+  replyTo = null,
+  section = "main",
+) {
   try {
     const event = {
       kind: 1,
       created_at: Math.floor(Date.now() / 1000),
       tags: [
-        ['t', POOL_NAME],
-        ['t', section]
+        ["t", POOL_NAME],
+        ["t", section],
       ],
       content: content,
-      pubkey: '',
+      pubkey: "",
     };
 
     if (replyTo) {
-      event.tags.push(['e', replyTo]);
+      event.tags.push(["e", replyTo]);
     }
 
     // event.id = getEventHash(event);
@@ -37,7 +42,7 @@ export async function publishPost(content, privateKey, replyTo = null, section =
 
     return event;
   } catch (error) {
-    console.error('Error publishing post:', error);
+    console.error("Error publishing post:", error);
     throw error;
   }
 }
@@ -48,12 +53,12 @@ export async function vote(postId, postAuthor, isUpvote, privateKey) {
       kind: isUpvote ? 7 : 8,
       created_at: Math.floor(Date.now() / 1000),
       tags: [
-        ['e', postId],
-        ['p', postAuthor],
-        ['t', POOL_NAME]
+        ["e", postId],
+        ["p", postAuthor],
+        ["t", POOL_NAME],
       ],
-      content: isUpvote ? '+' : '-',
-      pubkey: '',
+      content: isUpvote ? "+" : "-",
+      pubkey: "",
     };
 
     // event.id = getEventHash(event);
@@ -65,7 +70,7 @@ export async function vote(postId, postAuthor, isUpvote, privateKey) {
 
     return event;
   } catch (error) {
-    console.error('Error voting:', error);
+    console.error("Error voting:", error);
     throw error;
   }
 }
@@ -74,26 +79,27 @@ export async function fetchVotes(postIds) {
   try {
     const votes = await pool.querySync(RELAYS, {
       kinds: [7, 8],
-      '#e': postIds,
-      '#t': [POOL_NAME]
+      "#e": postIds,
+      "#t": [POOL_NAME],
     });
 
     const voteCounts = {};
-    postIds.forEach(id => {
-      voteCounts[id] = { up: 0, down: 0 };
-    });
 
-    votes.forEach(vote => {
-      const postId = vote.tags.find(tag => tag[0] === 'e')?.[1];
+    for (const id of postIds) {
+      voteCounts[id] = { up: 0, down: 0 };
+    }
+
+    for (const vote of votes) {
+      const postId = vote.tags.find((tag) => tag[0] === "e")?.[1];
       if (postId && voteCounts[postId]) {
         if (vote.kind === 7) voteCounts[postId].up++;
         if (vote.kind === 8) voteCounts[postId].down++;
       }
-    });
+    }
 
     return voteCounts;
   } catch (error) {
-    console.error('Error fetching votes:', error);
+    console.error("Error fetching votes:", error);
     throw error;
   }
 }
@@ -102,71 +108,72 @@ export async function fetchComments(postId) {
   try {
     const events = await pool.querySync(RELAYS, {
       kinds: [1],
-      '#e': [postId],
-      '#t': [POOL_NAME]
+      "#e": [postId],
+      "#t": [POOL_NAME],
     });
 
-    const comments = events.map(event => ({
-      id: event.id,
-      content: event.content,
-      author: event.pubkey,
-      createdAt: event.created_at,
-      votes: { up: 0, down: 0 }
-    }));
-
-    if (comments.length > 0) {
-      const votes = await fetchVotes(comments.map(comment => comment.id));
-      comments.forEach(comment => {
-        comment.votes = votes[comment.id] || { up: 0, down: 0 };
-      });
-    }
-
-    return comments.sort((a, b) => b.createdAt - a.createdAt);
-  } catch (error) {
-    console.error('Error fetching comments:', error);
-    throw error;
-  }
-}
-
-export async function fetchPosts(section = 'main') {
-  try {
-    const events = await pool.querySync(RELAYS, {
-      kinds: [1],
-      limit: 100,
-      '#t': [POOL_NAME, section]
-    });
-
-    const posts = events.filter(event => 
-      !event.tags.some(tag => tag[0] === 'e')
-    ).map(event => ({
+    const comments = events.map((event) => ({
       id: event.id,
       content: event.content,
       author: event.pubkey,
       createdAt: event.created_at,
       votes: { up: 0, down: 0 },
-      comments: 0,
-      tags: event.tags.map(tag => tag[1])
     }));
 
+    if (comments.length > 0) {
+      const votes = await fetchVotes(comments.map((comment) => comment.id));
+
+      for (const comment of comments) {
+        comment.votes = votes[comment.id] || { up: 0, down: 0 };
+      }
+    }
+
+    return comments.sort((a, b) => b.createdAt - a.createdAt);
+  } catch (error) {
+    console.error("Error fetching comments:", error);
+    throw error;
+  }
+}
+
+export async function fetchPosts(section = "main") {
+  try {
+    const events = await pool.querySync(RELAYS, {
+      kinds: [1],
+      limit: 100,
+      "#t": [POOL_NAME, section],
+    });
+
+    const posts = events
+      .filter((event) => !event.tags.some((tag) => tag[0] === "e"))
+      .map((event) => ({
+        id: event.id,
+        content: event.content,
+        author: event.pubkey,
+        createdAt: event.created_at,
+        votes: { up: 0, down: 0 },
+        comments: 0,
+        tags: event.tags.map((tag) => tag[1]),
+      }));
+
     if (posts.length > 0) {
-      const votes = await fetchVotes(posts.map(post => post.id));
+      const votes = await fetchVotes(posts.map((post) => post.id));
       const comments = await pool.querySync(RELAYS, {
         kinds: [1],
-        '#e': posts.map(p => p.id),
-        '#t': [POOL_NAME]
+        "#e": posts.map((p) => p.id),
+        "#t": [POOL_NAME],
       });
 
-      posts.forEach(post => {
+      for (const post of posts) {
         post.votes = votes[post.id] || { up: 0, down: 0 };
-        post.comments = comments.filter(c => 
-          c.tags.some(t => t[0] === 'e' && t[1] === post.id)
+        post.comments = comments.filter((c) =>
+          c.tags.some((t) => t[0] === "e" && t[1] === post.id),
         ).length;
-      });
+      }
     }
 
     return posts;
   } catch (error) {
-    console.error('Error fetching posts:', error);
+    console.error("Error fetching posts:", error);
     throw error;
   }
 }
@@ -176,40 +183,40 @@ export async function fetchUserPosts(pubkey) {
     const events = await pool.querySync(RELAYS, {
       kinds: [1],
       authors: [pubkey],
-      '#t': [POOL_NAME]
+      "#t": [POOL_NAME],
     });
 
-    const posts = events.filter(event => 
-      !event.tags.some(tag => tag[0] === 'e')
-    ).map(event => ({
-      id: event.id,
-      content: event.content,
-      author: event.pubkey,
-      createdAt: event.created_at,
-      votes: { up: 0, down: 0 },
-      comments: 0,
-      tags: event.tags.map(tag => tag[1])
-    }));
+    const posts = events
+      .filter((event) => !event.tags.some((tag) => tag[0] === "e"))
+      .map((event) => ({
+        id: event.id,
+        content: event.content,
+        author: event.pubkey,
+        createdAt: event.created_at,
+        votes: { up: 0, down: 0 },
+        comments: 0,
+        tags: event.tags.map((tag) => tag[1]),
+      }));
 
     if (posts.length > 0) {
-      const votes = await fetchVotes(posts.map(post => post.id));
+      const votes = await fetchVotes(posts.map((post) => post.id));
       const comments = await pool.querySync(RELAYS, {
         kinds: [1],
-        '#e': posts.map(p => p.id),
-        '#t': [POOL_NAME]
+        "#e": posts.map((p) => p.id),
+        "#t": [POOL_NAME],
       });
 
-      posts.forEach(post => {
+      for (const post of posts) {
         post.votes = votes[post.id] || { up: 0, down: 0 };
-        post.comments = comments.filter(c => 
-          c.tags.some(t => t[0] === 'e' && t[1] === post.id)
+        post.comments = comments.filter((c) =>
+          c.tags.some((t) => t[0] === "e" && t[1] === post.id),
         ).length;
-      });
+      }
     }
 
     return posts;
   } catch (error) {
-    console.error('Error fetching user posts:', error);
+    console.error("Error fetching user posts:", error);
     throw error;
   }
 }
@@ -218,12 +225,12 @@ export async function fetchUserProfile(pubkey) {
   try {
     const events = await pool.querySync(RELAYS, {
       kinds: [0],
-      authors: [pubkey]
+      authors: [pubkey],
     });
 
     if (events.length === 0) {
       return {
-        created_at: Date.now() / 1000
+        created_at: Date.now() / 1000,
       };
     }
 
@@ -232,10 +239,10 @@ export async function fetchUserProfile(pubkey) {
 
     return {
       ...profile,
-      created_at: profileEvent.created_at
+      created_at: profileEvent.created_at,
     };
   } catch (error) {
-    console.error('Error fetching user profile:', error);
+    console.error("Error fetching user profile:", error);
     throw error;
   }
 }
@@ -244,43 +251,43 @@ export async function fetchAllUsers() {
   try {
     const events = await pool.querySync(RELAYS, {
       kinds: [0],
-      '#t': [POOL_NAME]
+      "#t": [POOL_NAME],
     });
 
-    const users = events.map(event => {
+    const users = events.map((event) => {
       const profile = JSON.parse(event.content);
       return {
         id: event.pubkey,
         ...profile,
-        created_at: event.created_at
+        created_at: event.created_at,
       };
     });
 
     const roleEvents = await pool.querySync(RELAYS, {
       kinds: [30000],
-      '#t': [`${POOL_NAME}-role`]
+      "#t": [`${POOL_NAME}-role`],
     });
 
     const banEvents = await pool.querySync(RELAYS, {
       kinds: [30000],
-      '#t': [`${POOL_NAME}-ban`]
+      "#t": [`${POOL_NAME}-ban`],
     });
 
-    users.forEach(user => {
-      const roleEvent = roleEvents.find(e => 
-        e.tags.some(t => t[0] === 'p' && t[1] === user.id)
+    for (const user of users) {
+      const roleEvent = roleEvents.find((e) =>
+        e.tags.some((t) => t[0] === "p" && t[1] === user.id),
       );
-      const banEvent = banEvents.find(e => 
-        e.tags.some(t => t[0] === 'p' && t[1] === user.id)
+      const banEvent = banEvents.find((e) =>
+        e.tags.some((t) => t[0] === "p" && t[1] === user.id),
       );
 
-      user.role = roleEvent?.content || 'user';
-      user.banned = banEvent?.content === 'true';
-    });
+      user.role = roleEvent?.content || "user";
+      user.banned = banEvent?.content === "true";
+    }
 
     return users;
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error("Error fetching users:", error);
     throw error;
   }
 }
@@ -289,31 +296,31 @@ export async function fetchAllPosts() {
   try {
     const events = await pool.querySync(RELAYS, {
       kinds: [1],
-      '#t': [POOL_NAME]
+      "#t": [POOL_NAME],
     });
 
-    const posts = events.filter(event => 
-      !event.tags.some(tag => tag[0] === 'e')
-    ).map(event => ({
-      id: event.id,
-      content: event.content,
-      author: event.pubkey,
-      createdAt: event.created_at,
-      votes: { up: 0, down: 0 },
-      comments: 0
-    }));
+    const posts = events
+      .filter((event) => !event.tags.some((tag) => tag[0] === "e"))
+      .map((event) => ({
+        id: event.id,
+        content: event.content,
+        author: event.pubkey,
+        createdAt: event.created_at,
+        votes: { up: 0, down: 0 },
+        comments: 0,
+      }));
 
     if (posts.length > 0) {
-      const votes = await fetchVotes(posts.map(post => post.id));
+      const votes = await fetchVotes(posts.map((post) => post.id));
       const comments = await pool.querySync(RELAYS, {
         kinds: [1],
-        '#e': posts.map(p => p.id),
-        '#t': [POOL_NAME]
+        "#e": posts.map((p) => p.id),
+        "#t": [POOL_NAME],
       });
 
-      const authors = [...new Set(posts.map(p => p.author))];
+      const authors = [...new Set(posts.map((p) => p.author))];
       const profiles = await Promise.all(
-        authors.map(author => fetchUserProfile(author))
+        authors.map((author) => fetchUserProfile(author)),
       );
 
       const authorProfiles = authors.reduce((acc, author, index) => {
@@ -321,21 +328,21 @@ export async function fetchAllPosts() {
         return acc;
       }, {});
 
-      posts.forEach(post => {
+      for (const post of posts) {
         post.votes = votes[post.id] || { up: 0, down: 0 };
-        post.comments = comments.filter(c => 
-          c.tags.some(t => t[0] === 'e' && t[1] === post.id)
+        post.comments = comments.filter((c) =>
+          c.tags.some((t) => t[0] === "e" && t[1] === post.id),
         ).length;
         post.author = {
           id: post.author,
-          ...authorProfiles[post.author]
+          ...authorProfiles[post.author],
         };
-      });
+      }
     }
 
     return posts.sort((a, b) => b.createdAt - a.createdAt);
   } catch (error) {
-    console.error('Error fetching posts:', error);
+    console.error("Error fetching posts:", error);
     throw error;
   }
 }
@@ -346,11 +353,11 @@ export async function updateUserRole(userId, role) {
       kind: 30000,
       created_at: Math.floor(Date.now() / 1000),
       tags: [
-        ['t', `${POOL_NAME}-role`],
-        ['p', userId]
+        ["t", `${POOL_NAME}-role`],
+        ["p", userId],
       ],
       content: role,
-      pubkey: '',
+      pubkey: "",
     };
 
     // event.id = getEventHash(event);
@@ -362,7 +369,7 @@ export async function updateUserRole(userId, role) {
 
     return event;
   } catch (error) {
-    console.error('Error updating user role:', error);
+    console.error("Error updating user role:", error);
     throw error;
   }
 }
@@ -373,11 +380,11 @@ export async function banUser(userId, isBanned) {
       kind: 30000,
       created_at: Math.floor(Date.now() / 1000),
       tags: [
-        ['t', `${POOL_NAME}-ban`],
-        ['p', userId]
+        ["t", `${POOL_NAME}-ban`],
+        ["p", userId],
       ],
       content: isBanned.toString(),
-      pubkey: '',
+      pubkey: "",
     };
 
     // event.id = getEventHash(event);
@@ -389,7 +396,7 @@ export async function banUser(userId, isBanned) {
 
     return event;
   } catch (error) {
-    console.error('Error updating user ban status:', error);
+    console.error("Error updating user ban status:", error);
     throw error;
   }
 }
@@ -400,11 +407,11 @@ export async function removePost(postId) {
       kind: 30000,
       created_at: Math.floor(Date.now() / 1000),
       tags: [
-        ['t', `${POOL_NAME}-remove`],
-        ['e', postId]
+        ["t", `${POOL_NAME}-remove`],
+        ["e", postId],
       ],
-      content: 'removed',
-      pubkey: '',
+      content: "removed",
+      pubkey: "",
     };
 
     // event.id = getEventHash(event);
@@ -416,7 +423,7 @@ export async function removePost(postId) {
 
     return event;
   } catch (error) {
-    console.error('Error removing post:', error);
+    console.error("Error removing post:", error);
     throw error;
   }
 }
