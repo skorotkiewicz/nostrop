@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUp, ArrowDown, MessageSquare, Send, Reply } from "lucide-react";
+import { ArrowUp, ArrowDown, MessageSquare, Send, Reply, User } from "lucide-react";
 import { useStore } from "../store/useStore";
 import { fetchPosts, publishPost, vote, fetchComments } from "../utils/nostr";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
+import { Link } from "react-router-dom";
 
 function Home() {
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState([ ]);
   const [loading, setLoading] = useState(true);
   const [newPost, setNewPost] = useState("");
   const [publishing, setPublishing] = useState(false);
@@ -98,159 +99,128 @@ function Home() {
   }
 
   return (
-    <div>
-      {publicKey && (
-        <div className="card">
-          <form onSubmit={handlePublishPost}>
-            <textarea
-              value={newPost}
-              onChange={(e) => setNewPost(e.target.value)}
-              placeholder="Co słychać?"
-              className="post-input"
-              rows="3"
-            />
-            <button
-              type="submit"
-              disabled={publishing || !newPost.trim()}
-              className="button"
-            >
-              <Send size={20} />
-              {publishing ? "Publikowanie..." : "Opublikuj"}
-            </button>
-          </form>
-        </div>
+    <div className="card">
+      <h2>Gorące dyskusje</h2>
+      {posts.length === 0 ? (
+        <p className="text-light">Brak postów do wyświetlenia</p>
+      ) : (
+        posts.map((p) => (
+          <div key={p.id}>{renderPost(p)}</div>
+        ))
       )}
-
-      <div className="card">
-        <h2>Gorące dyskusje</h2>
-        {posts.length === 0 ? (
-          <p className="text-light">Brak postów do wyświetlenia</p>
-        ) : (
-          posts.map((post) => (
-            <div key={post.id} className="post">
-              <div className="post__votes">
-                <button
-                  type="button"
-                  className={`button ${!publicKey || votingStates[post.id] ? "button--disabled" : ""}`}
-                  onClick={() => handleVote(post.id, post.author, true)}
-                  disabled={!publicKey || votingStates[post.id]}
-                >
-                  <ArrowUp size={24} />
-                </button>
-                <span>{post.votes.up - post.votes.down}</span>
-                <button
-                  type="button"
-                  className={`button ${!publicKey || votingStates[post.id] ? "button--disabled" : ""}`}
-                  onClick={() => handleVote(post.id, post.author, false)}
-                  disabled={!publicKey || votingStates[post.id]}
-                >
-                  <ArrowDown size={24} />
-                </button>
-              </div>
-              <div className="post__content">
-                <h3>{post.content}</h3>
-                <div className="post__meta">
-                  <span>przez {post.author.slice(0, 8)}...</span>
-                  <span>•</span>
-                  <span>
-                    {formatDistanceToNow(post.createdAt * 1000, {
-                      addSuffix: true,
-                      locale: pl,
-                    })}
-                  </span>
-                  <span>•</span>
-                  <button
-                    type="button"
-                    onClick={() => handleExpandComments(post.id)}
-                    className="button button--link"
-                  >
-                    <MessageSquare size={16} />
-                    {post.comments} komentarzy
-                  </button>
-                </div>
-
-                {expandedComments[post.id] && (
-                  <div className="comments">
-                    {publicKey && (
-                      <div className="comments__form">
-                        <textarea
-                          value={newComments[post.id] || ""}
-                          onChange={(e) =>
-                            setNewComments((prev) => ({
-                              ...prev,
-                              [post.id]: e.target.value,
-                            }))
-                          }
-                          placeholder="Napisz komentarz..."
-                          className="post-input"
-                          rows="2"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handlePublishComment(post.id)}
-                          disabled={
-                            publishingComments[post.id] ||
-                            !newComments[post.id]?.trim()
-                          }
-                          className="button"
-                        >
-                          <Reply size={16} />
-                          {publishingComments[post.id]
-                            ? "Wysyłanie..."
-                            : "Odpowiedz"}
-                        </button>
-                      </div>
-                    )}
-
-                    {comments[post.id]?.map((comment) => (
-                      <div key={comment.id} className="comment">
-                        <div className="comment__votes">
-                          <button
-                            type="button"
-                            className={`button ${!publicKey || votingStates[comment.id] ? "button--disabled" : ""}`}
-                            onClick={() =>
-                              handleVote(comment.id, comment.author, true)
-                            }
-                            disabled={!publicKey || votingStates[comment.id]}
-                          >
-                            <ArrowUp size={16} />
-                          </button>
-                          <span>{comment.votes.up - comment.votes.down}</span>
-                          <button
-                            type="button"
-                            className={`button ${!publicKey || votingStates[comment.id] ? "button--disabled" : ""}`}
-                            onClick={() =>
-                              handleVote(comment.id, comment.author, false)
-                            }
-                            disabled={!publicKey || votingStates[comment.id]}
-                          >
-                            <ArrowDown size={16} />
-                          </button>
-                        </div>
-                        <div className="comment__content">
-                          <p>{comment.content}</p>
-                          <div className="comment__meta">
-                            <span>przez {comment.author.slice(0, 8)}...</span>
-                            <span>•</span>
-                            <span>
-                              {formatDistanceToNow(comment.createdAt * 1000, {
-                                addSuffix: true,
-                                locale: pl,
-                              })}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
     </div>
   );
-}
 
+  function renderPost(p) {
+    return (
+      <>
+        {publicKey && (
+          <div className="card">
+            <form onSubmit={handlePublishPost}>
+              <textarea
+                value={newPost}
+                onChange={(e) => setNewPost(e.target.value)}
+                placeholder="Co słychać?"
+                className="post-input"
+                rows="3"
+              />
+              <button
+                type="submit"
+                disabled={publishing || !newPost.trim()}
+                className="button"
+              >
+                <Send size={20} />
+                {publishing ? "Publikowanie..." : "Opublikuj"}
+              </button>
+            </form>
+          </div>
+        )}
+
+        <div className="post">
+          <div className="post__votes">
+            <button
+              type="button"
+              className={`button ${!publicKey || votingStates[p.id] ? "button--disabled" : ""
+                }`}
+              onClick={() => handleVote(p.id, p.author, true)}
+              disabled={!publicKey || votingStates[p.id]}
+            >
+              <ArrowUp size={24} />
+            </button>
+            <span>{p.votes.up - p.votes.down}</span>
+            <button
+              type="button"
+              className={`button ${!publicKey || votingStates[p.id] ? "button--disabled" : ""
+                }`}
+              onClick={() => handleVote(p.id, p.author, false)}
+              disabled={!publicKey || votingStates[p.id]}
+            >
+              <ArrowDown size={24} />
+            </button>
+          </div>
+          <div className="post__content">
+            <h3>
+              <Link to={`/post/${p.id}`}>
+                {p.content.split("\n")[0].slice(0, 100) +
+                  (p.content.length > 100 ? "..." : "")}
+              </Link>
+            </h3>
+          </div>
+        </div>
+
+        {expandedComments[p.id] && (
+          <div className="comments">
+            {publicKey && (
+              <div className="comments__form">
+                <textarea
+                  value={newComments[p.id] || ""}
+                  onChange={(e) =>
+                    setNewComments((prev) => ({
+                      ...prev,
+                      [p.id]: e.target.value,
+                    }))
+                  }
+                  placeholder="Napisz komentarz..."
+                  className="post-input"
+                  rows="2"
+                />
+                <button
+                  type="button"
+                  onClick={() => handlePublishComment(p.id)}
+                  disabled={
+                    publishingComments[p.id] || !newComments[p.id]?.trim()
+                  }
+                  className="button"
+                >
+                  <Reply size={16} />
+                  {publishingComments[p.id] ? "Wysyłanie..." : "Odpowiedz"}
+                </button>
+              </div>
+            )}
+
+            {comments[p.id]?.map((comment) => (
+              <div key={comment.id} className="comment">
+                <div className="comment__content">
+                  <p>{comment.content}</p>
+                  <div className="comment__meta">
+                    <Link to={`/profile/${comment.author}`}>
+                      <span>{comment.profile?.name || comment.author.slice(0, 8)}</span>
+                    </Link>
+                    <span>•</span>
+                    <span>
+                      {formatDistanceToNow(comment.createdAt * 1000, {
+                        addSuffix: true,
+                        locale: pl,
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </>
+    );
+  }
+}
 export default Home;

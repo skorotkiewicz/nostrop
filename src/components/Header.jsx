@@ -37,6 +37,7 @@ function Header() {
                   Panel
                 </Link>
               )}
+              <Link to={`/profile/${publicKey}`}>Profil</Link>
               <Link to="/settings">
                 <Settings size={20} />
               </Link>

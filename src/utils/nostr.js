@@ -45,6 +45,42 @@ export async function publishPost(
   }
 }
 
+export async function fetchPost(id) {
+  try {
+    const events = await pool.querySync(RELAYS, {
+      kinds: [1],
+      ids: [id],
+      limit: 1,
+      "#t": [POOL_NAME],
+    });
+
+    if (events.length === 0) {
+      return null;
+    }
+
+    const event = events[0];
+    let post = {
+      id: event.id,
+      content: event.content,
+      author: event.pubkey,
+      createdAt: event.created_at,
+      votes: { up: 0, down: 0 },
+      comments: 0,
+      tags: event.tags.map((tag) => tag[1]),
+    };
+
+    const votes = await fetchVotes([post.id]);
+    const comments = await fetchComments(post.id);
+    post.votes = votes[post.id] || { up: 0, down: 0 };
+    post.comments = comments.length;
+
+    return post;
+  } catch (error) {
+    console.error("Error fetching post:", error);
+    throw error;
+  }
+}
+
 export async function vote(postId, postAuthor, isUpvote, privateKey) {
   try {
     const event = {
@@ -343,7 +379,7 @@ export async function fetchAllPosts() {
   }
 }
 
-export async function updateUserRole(userId, role) {
+export async function updateUserRole(userId, role, privateKey) {
   try {
     const event = {
       kind: 30000,
@@ -368,7 +404,7 @@ export async function updateUserRole(userId, role) {
   }
 }
 
-export async function banUser(userId, isBanned) {
+export async function banUser(userId, isBanned, privateKey) {
   try {
     const event = {
       kind: 30000,
@@ -393,7 +429,7 @@ export async function banUser(userId, isBanned) {
   }
 }
 
-export async function removePost(postId) {
+export async function removePost(postId, privateKey) {
   try {
     const event = {
       kind: 30000,

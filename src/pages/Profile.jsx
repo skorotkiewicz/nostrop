@@ -30,7 +30,7 @@ function Profile() {
   const [comments, setComments] = useState({});
   const [newComments, setNewComments] = useState({});
   const [publishingComments, setPublishingComments] = useState({});
-  const { publicKey, privateKey } = useStore();
+  const { publicKey, privateKey, setPrivateKey } = useStore();
   const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
@@ -139,6 +139,29 @@ function Profile() {
             </div>
           </div>
         </div>
+        {pubkey === publicKey && (
+          <div className="profile__private-key">
+            <input
+              type="text"
+              placeholder="Twój klucz prywatny"
+              value={privateKey || ""}
+              onChange={(e) => setPrivateKey(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (privateKey) {
+                  localStorage.setItem("privateKey", privateKey);
+                  alert("Klucz prywatny zapisany w localStorage.");
+                } else {
+                  alert("Wprowadź klucz prywatny.");
+                }
+              }}
+              className="button"
+            >
+              Zapisz klucz prywatny
+            </button>
+          </div>)}
       </div>
 
       <div className="card">

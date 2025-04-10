@@ -16,12 +16,13 @@ import {
   banUser,
   removePost,
 } from "../utils/nostr";
+import { ADMIN_KEY } from "../config";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 
 function AdminPanel() {
   const navigate = useNavigate();
-  const { publicKey, profile } = useStore();
+  const { publicKey, profile, privateKey } = useStore();
   const [activeTab, setActiveTab] = useState("users");
   const [users, setUsers] = useState([]);
   const [posts, setPosts] = useState([]);
@@ -32,8 +33,11 @@ function AdminPanel() {
     if (
       !publicKey ||
       !profile ||
-      (profile.role !== "admin" && profile.role !== "moderator")
+      (publicKey !== ADMIN_KEY &&
+        profile.role !== "admin" &&
+        profile.role !== "moderator")
     ) {
+      console.log(profile);
       navigate("/");
       return;
     }
@@ -62,7 +66,7 @@ function AdminPanel() {
 
     setProcessingAction((prev) => ({ ...prev, [userId]: true }));
     try {
-      await updateUserRole(userId, newRole);
+      await updateUserRole(userId, newRole, privateKey);
       await loadData();
     } catch (error) {
       console.error("Error updating user role:", error);
@@ -76,7 +80,7 @@ function AdminPanel() {
 
     setProcessingAction((prev) => ({ ...prev, [userId]: true }));
     try {
-      await banUser(userId, isBanned);
+      await banUser(userId, isBanned, privateKey);
       await loadData();
     } catch (error) {
       console.error("Error updating user ban status:", error);
@@ -90,7 +94,7 @@ function AdminPanel() {
 
     setProcessingAction((prev) => ({ ...prev, [postId]: true }));
     try {
-      await removePost(postId);
+      await removePost(postId, privateKey);
       await loadData();
     } catch (error) {
       console.error("Error removing post:", error);
