@@ -1,7 +1,14 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { LogIn, LogOut, Home, MessageSquare, Settings, Shield } from 'lucide-react';
-import { useStore } from '../store/useStore';
+import React from "react";
+import { Link } from "react-router-dom";
+import {
+  LogIn,
+  LogOut,
+  Home,
+  MessageSquare,
+  Settings,
+  Shield,
+} from "lucide-react";
+import { useStore } from "../store/useStore";
 
 function Header() {
   const { publicKey, profile, logout } = useStore();
@@ -20,11 +27,11 @@ function Header() {
           </Link>
           <Link to="/mikroblog">Mikroblog</Link>
         </div>
-        
+
         <div className="header__nav">
           {publicKey ? (
             <>
-              {(profile?.role === 'admin' || profile?.role === 'moderator') && (
+              {(profile?.role === "admin" || profile?.role === "moderator") && (
                 <Link to="/admin">
                   <Shield size={16} />
                   Panel
@@ -33,7 +40,7 @@ function Header() {
               <Link to="/settings">
                 <Settings size={20} />
               </Link>
-              <button onClick={logout} className="button">
+              <button type="button" onClick={logout} className="button">
                 <LogOut size={20} />
               </button>
             </>

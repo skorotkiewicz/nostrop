@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowUp, ArrowDown, MessageSquare, Send, Reply } from 'lucide-react';
-import { useStore } from '../store/useStore';
-import { fetchPosts, publishPost, vote, fetchComments } from '../utils/nostr';
-import { formatDistanceToNow } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import React, { useState, useEffect } from "react";
+import { ArrowUp, ArrowDown, MessageSquare, Send, Reply } from "lucide-react";
+import { useStore } from "../store/useStore";
+import { fetchPosts, publishPost, vote, fetchComments } from "../utils/nostr";
+import { formatDistanceToNow } from "date-fns";
+import { pl } from "date-fns/locale";
 
 function Home() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [newPost, setNewPost] = useState('');
+  const [newPost, setNewPost] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [votingStates, setVotingStates] = useState({});
   const [expandedComments, setExpandedComments] = useState({});
@@ -26,7 +26,7 @@ function Home() {
       const fetchedPosts = await fetchPosts();
       setPosts(fetchedPosts.sort((a, b) => b.createdAt - a.createdAt));
     } catch (error) {
-      console.error('Error loading posts:', error);
+      console.error("Error loading posts:", error);
     } finally {
       setLoading(false);
     }
@@ -39,10 +39,10 @@ function Home() {
     setPublishing(true);
     try {
       await publishPost(newPost, privateKey);
-      setNewPost('');
+      setNewPost("");
       await loadPosts();
     } catch (error) {
-      console.error('Error publishing post:', error);
+      console.error("Error publishing post:", error);
     } finally {
       setPublishing(false);
     }
@@ -51,14 +51,14 @@ function Home() {
   async function handleVote(postId, postAuthor, isUpvote) {
     if (!privateKey || votingStates[postId]) return;
 
-    setVotingStates(prev => ({ ...prev, [postId]: true }));
+    setVotingStates((prev) => ({ ...prev, [postId]: true }));
     try {
       await vote(postId, postAuthor, isUpvote, privateKey);
       await loadPosts();
     } catch (error) {
-      console.error('Error voting:', error);
+      console.error("Error voting:", error);
     } finally {
-      setVotingStates(prev => ({ ...prev, [postId]: false }));
+      setVotingStates((prev) => ({ ...prev, [postId]: false }));
     }
   }
 
@@ -66,30 +66,30 @@ function Home() {
     if (!expandedComments[postId]) {
       try {
         const fetchedComments = await fetchComments(postId);
-        setComments(prev => ({ ...prev, [postId]: fetchedComments }));
-        setExpandedComments(prev => ({ ...prev, [postId]: true }));
+        setComments((prev) => ({ ...prev, [postId]: fetchedComments }));
+        setExpandedComments((prev) => ({ ...prev, [postId]: true }));
       } catch (error) {
-        console.error('Error fetching comments:', error);
+        console.error("Error fetching comments:", error);
       }
     } else {
-      setExpandedComments(prev => ({ ...prev, [postId]: false }));
+      setExpandedComments((prev) => ({ ...prev, [postId]: false }));
     }
   }
 
   async function handlePublishComment(postId) {
     if (!newComments[postId]?.trim() || !privateKey) return;
 
-    setPublishingComments(prev => ({ ...prev, [postId]: true }));
+    setPublishingComments((prev) => ({ ...prev, [postId]: true }));
     try {
       await publishPost(newComments[postId], privateKey, postId);
-      setNewComments(prev => ({ ...prev, [postId]: '' }));
+      setNewComments((prev) => ({ ...prev, [postId]: "" }));
       const fetchedComments = await fetchComments(postId);
-      setComments(prev => ({ ...prev, [postId]: fetchedComments }));
+      setComments((prev) => ({ ...prev, [postId]: fetchedComments }));
       await loadPosts();
     } catch (error) {
-      console.error('Error publishing comment:', error);
+      console.error("Error publishing comment:", error);
     } finally {
-      setPublishingComments(prev => ({ ...prev, [postId]: false }));
+      setPublishingComments((prev) => ({ ...prev, [postId]: false }));
     }
   }
 
@@ -115,7 +115,7 @@ function Home() {
               className="button"
             >
               <Send size={20} />
-              {publishing ? 'Publikowanie...' : 'Opublikuj'}
+              {publishing ? "Publikowanie..." : "Opublikuj"}
             </button>
           </form>
         </div>
@@ -130,7 +130,8 @@ function Home() {
             <div key={post.id} className="post">
               <div className="post__votes">
                 <button
-                  className={`button ${!publicKey || votingStates[post.id] ? 'button--disabled' : ''}`}
+                  type="button"
+                  className={`button ${!publicKey || votingStates[post.id] ? "button--disabled" : ""}`}
                   onClick={() => handleVote(post.id, post.author, true)}
                   disabled={!publicKey || votingStates[post.id]}
                 >
@@ -138,7 +139,8 @@ function Home() {
                 </button>
                 <span>{post.votes.up - post.votes.down}</span>
                 <button
-                  className={`button ${!publicKey || votingStates[post.id] ? 'button--disabled' : ''}`}
+                  type="button"
+                  className={`button ${!publicKey || votingStates[post.id] ? "button--disabled" : ""}`}
                   onClick={() => handleVote(post.id, post.author, false)}
                   disabled={!publicKey || votingStates[post.id]}
                 >
@@ -153,11 +155,12 @@ function Home() {
                   <span>
                     {formatDistanceToNow(post.createdAt * 1000, {
                       addSuffix: true,
-                      locale: pl
+                      locale: pl,
                     })}
                   </span>
                   <span>•</span>
                   <button
+                    type="button"
                     onClick={() => handleExpandComments(post.id)}
                     className="button button--link"
                   >
@@ -171,40 +174,54 @@ function Home() {
                     {publicKey && (
                       <div className="comments__form">
                         <textarea
-                          value={newComments[post.id] || ''}
-                          onChange={(e) => setNewComments(prev => ({
-                            ...prev,
-                            [post.id]: e.target.value
-                          }))}
+                          value={newComments[post.id] || ""}
+                          onChange={(e) =>
+                            setNewComments((prev) => ({
+                              ...prev,
+                              [post.id]: e.target.value,
+                            }))
+                          }
                           placeholder="Napisz komentarz..."
                           className="post-input"
                           rows="2"
                         />
                         <button
+                          type="button"
                           onClick={() => handlePublishComment(post.id)}
-                          disabled={publishingComments[post.id] || !newComments[post.id]?.trim()}
+                          disabled={
+                            publishingComments[post.id] ||
+                            !newComments[post.id]?.trim()
+                          }
                           className="button"
                         >
                           <Reply size={16} />
-                          {publishingComments[post.id] ? 'Wysyłanie...' : 'Odpowiedz'}
+                          {publishingComments[post.id]
+                            ? "Wysyłanie..."
+                            : "Odpowiedz"}
                         </button>
                       </div>
                     )}
 
-                    {comments[post.id]?.map(comment => (
+                    {comments[post.id]?.map((comment) => (
                       <div key={comment.id} className="comment">
                         <div className="comment__votes">
                           <button
-                            className={`button ${!publicKey || votingStates[comment.id] ? 'button--disabled' : ''}`}
-                            onClick={() => handleVote(comment.id, comment.author, true)}
+                            type="button"
+                            className={`button ${!publicKey || votingStates[comment.id] ? "button--disabled" : ""}`}
+                            onClick={() =>
+                              handleVote(comment.id, comment.author, true)
+                            }
                             disabled={!publicKey || votingStates[comment.id]}
                           >
                             <ArrowUp size={16} />
                           </button>
                           <span>{comment.votes.up - comment.votes.down}</span>
                           <button
-                            className={`button ${!publicKey || votingStates[comment.id] ? 'button--disabled' : ''}`}
-                            onClick={() => handleVote(comment.id, comment.author, false)}
+                            type="button"
+                            className={`button ${!publicKey || votingStates[comment.id] ? "button--disabled" : ""}`}
+                            onClick={() =>
+                              handleVote(comment.id, comment.author, false)
+                            }
                             disabled={!publicKey || votingStates[comment.id]}
                           >
                             <ArrowDown size={16} />
@@ -218,7 +235,7 @@ function Home() {
                             <span>
                               {formatDistanceToNow(comment.createdAt * 1000, {
                                 addSuffix: true,
-                                locale: pl
+                                locale: pl,
                               })}
                             </span>
                           </div>

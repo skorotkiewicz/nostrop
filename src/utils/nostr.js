@@ -33,8 +33,6 @@ export async function publishPost(
       event.tags.push(["e", replyTo]);
     }
 
-    // event.id = getEventHash(event);
-    // event.sig = await signEvent(event, privateKey);
     const signedEvent = finalizeEvent(event, privateKey);
 
     const pubs = pool.publish(RELAYS, signedEvent);
@@ -61,8 +59,6 @@ export async function vote(postId, postAuthor, isUpvote, privateKey) {
       pubkey: "",
     };
 
-    // event.id = getEventHash(event);
-    // event.sig = await signEvent(event, privateKey);
     const signedEvent = finalizeEvent(event, privateKey);
 
     const pubs = pool.publish(RELAYS, signedEvent);
@@ -360,8 +356,6 @@ export async function updateUserRole(userId, role) {
       pubkey: "",
     };
 
-    // event.id = getEventHash(event);
-    // event.sig = await signEvent(event, privateKey);
     const signedEvent = finalizeEvent(event, privateKey);
 
     const pubs = pool.publish(RELAYS, signedEvent);
@@ -387,8 +381,6 @@ export async function banUser(userId, isBanned) {
       pubkey: "",
     };
 
-    // event.id = getEventHash(event);
-    // event.sig = await signEvent(event, privateKey);
     const signedEvent = finalizeEvent(event, privateKey);
 
     const pubs = pool.publish(RELAYS, signedEvent);
@@ -414,8 +406,6 @@ export async function removePost(postId) {
       pubkey: "",
     };
 
-    // event.id = getEventHash(event);
-    // event.sig = await signEvent(event, privateKey);
     const signedEvent = finalizeEvent(event, privateKey);
 
     const pubs = pool.publish(RELAYS, signedEvent);

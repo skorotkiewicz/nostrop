@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { generateSecretKey, getPublicKey } from 'nostr-tools';
-import { useStore } from '../store/useStore';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { generateSecretKey, getPublicKey } from "nostr-tools";
+import { useStore } from "../store/useStore";
 
 function Login() {
   const navigate = useNavigate();
@@ -14,9 +14,9 @@ function Login() {
       const privateKey = generateSecretKey();
       const publicKey = getPublicKey(privateKey);
       setKeys(publicKey, privateKey);
-      navigate('/');
+      navigate("/");
     } catch (error) {
-      console.error('Error generating keys:', error);
+      console.error("Error generating keys:", error);
     }
     setLoading(false);
   };
@@ -26,11 +26,12 @@ function Login() {
       <h2>Zaloguj się</h2>
       <div>
         <button
+          type="button"
           onClick={handleGenerateKeys}
           disabled={loading}
           className="button button--full"
         >
-          {loading ? 'Generowanie...' : 'Wygeneruj nowy klucz'}
+          {loading ? "Generowanie..." : "Wygeneruj nowy klucz"}
         </button>
         <p className="text-light">
           Twój klucz prywatny zostanie bezpiecznie zapisany w przeglądarce
