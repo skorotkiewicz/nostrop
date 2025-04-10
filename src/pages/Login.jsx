@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { generateSecretKey, getPublicKey } from "nostr-tools";
+import { generateSecretKey, getPublicKey, utils } from "nostr-tools";
 import { useStore } from "../store/useStore";
 
 function Login() {
@@ -15,9 +15,14 @@ function Login() {
       let privateKey = privateKeyInput.trim();
 
       if (privateKey === "") {
-        privateKey = generateSecretKey();
+        privateKey = utils.bytesToHex(generateSecretKey());
+      } else {
+        if (!utils.isValidPrivateKey(privateKey)) {
+          console.error("Invalid private key provided");
+          setLoading(false);
+          return;
+        }
       }
-
       const publicKey = getPublicKey(privateKey);
 
       if (privateKey) {
