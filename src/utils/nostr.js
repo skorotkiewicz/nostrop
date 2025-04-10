@@ -1,10 +1,12 @@
-import { SimplePool, getEventHash, signEvent } from 'nostr-tools';
+import { SimplePool, getEventHash } from 'nostr-tools';
+import { finalizeEvent } from 'nostr-tools/pure';
+import { POOL_NAME } from '../config.js'; 
 
 const RELAYS = [
-  'wss://relay.damus.io',
-  'wss://relay.nostr.band',
+  // 'wss://relay.damus.io',
+  // 'wss://relay.nostr.band',
   'wss://nos.lol',
-  'wss://relay.snort.social'
+  // 'wss://relay.snort.social'
 ];
 
 const pool = new SimplePool();
@@ -15,7 +17,7 @@ export async function publishPost(content, privateKey, replyTo = null, section =
       kind: 1,
       created_at: Math.floor(Date.now() / 1000),
       tags: [
-        ['t', 'nostrop'],
+        ['t', POOL_NAME],
         ['t', section]
       ],
       content: content,
@@ -26,10 +28,11 @@ export async function publishPost(content, privateKey, replyTo = null, section =
       event.tags.push(['e', replyTo]);
     }
 
-    event.id = getEventHash(event);
-    event.sig = await signEvent(event, privateKey);
+    // event.id = getEventHash(event);
+    // event.sig = await signEvent(event, privateKey);
+    const signedEvent = finalizeEvent(event, privateKey);
 
-    const pubs = pool.publish(RELAYS, event);
+    const pubs = pool.publish(RELAYS, signedEvent);
     await Promise.all(pubs);
 
     return event;
@@ -47,16 +50,17 @@ export async function vote(postId, postAuthor, isUpvote, privateKey) {
       tags: [
         ['e', postId],
         ['p', postAuthor],
-        ['t', 'nostrop']
+        ['t', POOL_NAME]
       ],
       content: isUpvote ? '+' : '-',
       pubkey: '',
     };
 
-    event.id = getEventHash(event);
-    event.sig = await signEvent(event, privateKey);
+    // event.id = getEventHash(event);
+    // event.sig = await signEvent(event, privateKey);
+    const signedEvent = finalizeEvent(event, privateKey);
 
-    const pubs = pool.publish(RELAYS, event);
+    const pubs = pool.publish(RELAYS, signedEvent);
     await Promise.all(pubs);
 
     return event;
@@ -68,13 +72,11 @@ export async function vote(postId, postAuthor, isUpvote, privateKey) {
 
 export async function fetchVotes(postIds) {
   try {
-    const votes = await pool.list(RELAYS, [
-      {
-        kinds: [7, 8],
-        '#e': postIds,
-        '#t': ['nostrop']
-      }
-    ]);
+    const votes = await pool.querySync(RELAYS, {
+      kinds: [7, 8],
+      '#e': postIds,
+      '#t': [POOL_NAME]
+    });
 
     const voteCounts = {};
     postIds.forEach(id => {
@@ -98,13 +100,11 @@ export async function fetchVotes(postIds) {
 
 export async function fetchComments(postId) {
   try {
-    const events = await pool.list(RELAYS, [
-      {
-        kinds: [1],
-        '#e': [postId],
-        '#t': ['nostrop']
-      }
-    ]);
+    const events = await pool.querySync(RELAYS, {
+      kinds: [1],
+      '#e': [postId],
+      '#t': [POOL_NAME]
+    });
 
     const comments = events.map(event => ({
       id: event.id,
@@ -130,13 +130,11 @@ export async function fetchComments(postId) {
 
 export async function fetchPosts(section = 'main') {
   try {
-    const events = await pool.list(RELAYS, [
-      {
-        kinds: [1],
-        limit: 100,
-        '#t': ['nostrop', section]
-      }
-    ]);
+    const events = await pool.querySync(RELAYS, {
+      kinds: [1],
+      limit: 100,
+      '#t': [POOL_NAME, section]
+    });
 
     const posts = events.filter(event => 
       !event.tags.some(tag => tag[0] === 'e')
@@ -152,13 +150,11 @@ export async function fetchPosts(section = 'main') {
 
     if (posts.length > 0) {
       const votes = await fetchVotes(posts.map(post => post.id));
-      const comments = await pool.list(RELAYS, [
-        {
-          kinds: [1],
-          '#e': posts.map(p => p.id),
-          '#t': ['nostrop']
-        }
-      ]);
+      const comments = await pool.querySync(RELAYS, {
+        kinds: [1],
+        '#e': posts.map(p => p.id),
+        '#t': [POOL_NAME]
+      });
 
       posts.forEach(post => {
         post.votes = votes[post.id] || { up: 0, down: 0 };
@@ -177,13 +173,11 @@ export async function fetchPosts(section = 'main') {
 
 export async function fetchUserPosts(pubkey) {
   try {
-    const events = await pool.list(RELAYS, [
-      {
-        kinds: [1],
-        authors: [pubkey],
-        '#t': ['nostrop']
-      }
-    ]);
+    const events = await pool.querySync(RELAYS, {
+      kinds: [1],
+      authors: [pubkey],
+      '#t': [POOL_NAME]
+    });
 
     const posts = events.filter(event => 
       !event.tags.some(tag => tag[0] === 'e')
@@ -199,13 +193,11 @@ export async function fetchUserPosts(pubkey) {
 
     if (posts.length > 0) {
       const votes = await fetchVotes(posts.map(post => post.id));
-      const comments = await pool.list(RELAYS, [
-        {
-          kinds: [1],
-          '#e': posts.map(p => p.id),
-          '#t': ['nostrop']
-        }
-      ]);
+      const comments = await pool.querySync(RELAYS, {
+        kinds: [1],
+        '#e': posts.map(p => p.id),
+        '#t': [POOL_NAME]
+      });
 
       posts.forEach(post => {
         post.votes = votes[post.id] || { up: 0, down: 0 };
@@ -224,12 +216,10 @@ export async function fetchUserPosts(pubkey) {
 
 export async function fetchUserProfile(pubkey) {
   try {
-    const events = await pool.list(RELAYS, [
-      {
-        kinds: [0],
-        authors: [pubkey]
-      }
-    ]);
+    const events = await pool.querySync(RELAYS, {
+      kinds: [0],
+      authors: [pubkey]
+    });
 
     if (events.length === 0) {
       return {
@@ -252,12 +242,10 @@ export async function fetchUserProfile(pubkey) {
 
 export async function fetchAllUsers() {
   try {
-    const events = await pool.list(RELAYS, [
-      {
-        kinds: [0],
-        '#t': ['nostrop']
-      }
-    ]);
+    const events = await pool.querySync(RELAYS, {
+      kinds: [0],
+      '#t': [POOL_NAME]
+    });
 
     const users = events.map(event => {
       const profile = JSON.parse(event.content);
@@ -268,19 +256,15 @@ export async function fetchAllUsers() {
       };
     });
 
-    const roleEvents = await pool.list(RELAYS, [
-      {
-        kinds: [30000],
-        '#t': ['nostrop-role']
-      }
-    ]);
+    const roleEvents = await pool.querySync(RELAYS, {
+      kinds: [30000],
+      '#t': [`${POOL_NAME}-role`]
+    });
 
-    const banEvents = await pool.list(RELAYS, [
-      {
-        kinds: [30000],
-        '#t': ['nostrop-ban']
-      }
-    ]);
+    const banEvents = await pool.querySync(RELAYS, {
+      kinds: [30000],
+      '#t': [`${POOL_NAME}-ban`]
+    });
 
     users.forEach(user => {
       const roleEvent = roleEvents.find(e => 
@@ -303,12 +287,10 @@ export async function fetchAllUsers() {
 
 export async function fetchAllPosts() {
   try {
-    const events = await pool.list(RELAYS, [
-      {
-        kinds: [1],
-        '#t': ['nostrop']
-      }
-    ]);
+    const events = await pool.querySync(RELAYS, {
+      kinds: [1],
+      '#t': [POOL_NAME]
+    });
 
     const posts = events.filter(event => 
       !event.tags.some(tag => tag[0] === 'e')
@@ -323,13 +305,11 @@ export async function fetchAllPosts() {
 
     if (posts.length > 0) {
       const votes = await fetchVotes(posts.map(post => post.id));
-      const comments = await pool.list(RELAYS, [
-        {
-          kinds: [1],
-          '#e': posts.map(p => p.id),
-          '#t': ['nostrop']
-        }
-      ]);
+      const comments = await pool.querySync(RELAYS, {
+        kinds: [1],
+        '#e': posts.map(p => p.id),
+        '#t': [POOL_NAME]
+      });
 
       const authors = [...new Set(posts.map(p => p.author))];
       const profiles = await Promise.all(
@@ -366,17 +346,18 @@ export async function updateUserRole(userId, role) {
       kind: 30000,
       created_at: Math.floor(Date.now() / 1000),
       tags: [
-        ['t', 'nostrop-role'],
+        ['t', `${POOL_NAME}-role`],
         ['p', userId]
       ],
       content: role,
       pubkey: '',
     };
 
-    event.id = getEventHash(event);
-    event.sig = await signEvent(event, privateKey);
+    // event.id = getEventHash(event);
+    // event.sig = await signEvent(event, privateKey);
+    const signedEvent = finalizeEvent(event, privateKey);
 
-    const pubs = pool.publish(RELAYS, event);
+    const pubs = pool.publish(RELAYS, signedEvent);
     await Promise.all(pubs);
 
     return event;
@@ -392,17 +373,18 @@ export async function banUser(userId, isBanned) {
       kind: 30000,
       created_at: Math.floor(Date.now() / 1000),
       tags: [
-        ['t', 'nostrop-ban'],
+        ['t', `${POOL_NAME}-ban`],
         ['p', userId]
       ],
       content: isBanned.toString(),
       pubkey: '',
     };
 
-    event.id = getEventHash(event);
-    event.sig = await signEvent(event, privateKey);
+    // event.id = getEventHash(event);
+    // event.sig = await signEvent(event, privateKey);
+    const signedEvent = finalizeEvent(event, privateKey);
 
-    const pubs = pool.publish(RELAYS, event);
+    const pubs = pool.publish(RELAYS, signedEvent);
     await Promise.all(pubs);
 
     return event;
@@ -418,17 +400,18 @@ export async function removePost(postId) {
       kind: 30000,
       created_at: Math.floor(Date.now() / 1000),
       tags: [
-        ['t', 'nostrop-remove'],
+        ['t', `${POOL_NAME}-remove`],
         ['e', postId]
       ],
       content: 'removed',
       pubkey: '',
     };
 
-    event.id = getEventHash(event);
-    event.sig = await signEvent(event, privateKey);
+    // event.id = getEventHash(event);
+    // event.sig = await signEvent(event, privateKey);
+    const signedEvent = finalizeEvent(event, privateKey);
 
-    const pubs = pool.publish(RELAYS, event);
+    const pubs = pool.publish(RELAYS, signedEvent);
     await Promise.all(pubs);
 
     return event;

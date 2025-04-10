@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { generatePrivateKey, getPublicKey } from 'nostr-tools';
+import { generateSecretKey, getPublicKey } from 'nostr-tools';
 import { useStore } from '../store/useStore';
 
 function Login() {
@@ -11,7 +11,7 @@ function Login() {
   const handleGenerateKeys = async () => {
     setLoading(true);
     try {
-      const privateKey = generatePrivateKey();
+      const privateKey = generateSecretKey();
       const publicKey = getPublicKey(privateKey);
       setKeys(publicKey, privateKey);
       navigate('/');

@@ -6,7 +6,7 @@ import Login from './pages/Login';
 import Mikroblog from './pages/Mikroblog';
 import Profile from './pages/Profile';
 import AdminPanel from './pages/AdminPanel';
-import Settings from './pages/Settings';
+// import Settings from './pages/Settings';
 import './styles/main.scss';
 
 function App() {
@@ -21,7 +21,7 @@ function App() {
             <Route path="/mikroblog" element={<Mikroblog />} />
             <Route path="/profile/:pubkey" element={<Profile />} />
             <Route path="/admin" element={<AdminPanel />} />
-            <Route path="/settings" element={<Settings />} />
+            {/* <Route path="/settings" element={<Settings />} /> */}
           </Routes>
         </main>
       </div>
